@@ -3,8 +3,6 @@ package pvp;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.Timer;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 public class GameLogic {
 
@@ -12,26 +10,7 @@ public class GameLogic {
     private volatile int choice = -1;
     private boolean characterChoice = false;
     private Random random = new Random();
-    private AtomicBoolean skillChoice1 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice2 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice3 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice4 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice5 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice6 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice7 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice8 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice9 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice10 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice11 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice12 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice13 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice14 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice15 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice16 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice17 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice18 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice19 = new AtomicBoolean(false);
-    private AtomicBoolean skillChoice20 = new AtomicBoolean(false);
+    private AtomicBoolean[] skillChoice = new AtomicBoolean[20];
     private Character player;
     private Character enemy;
     public GameLogic(GameUI gameUI) {
@@ -39,6 +18,10 @@ public class GameLogic {
     }
 
     public void gameLogic() {
+        for (int i = 0; i < 20; i++) {
+            skillChoice[i] = new AtomicBoolean(false);
+        }
+
         gameUI.append("마법사: 데미지가 매우 강하지만 명중률이 낮고 체력이 낮습니다.");
         gameUI.append("거너: 데미지는 강한 편이지만 명중률이 다소 낮고 체력은 낮은 편입니다.");
         gameUI.append("소드마스터: 데미지, 명중률, 체력의 밸런스가 좋습니다.");
@@ -138,14 +121,14 @@ public class GameLogic {
                         gameUI.getInputText().setText("");
                         if (choice == 1) {
                             player.ultimate(enemy);
-                            gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
                         } else if (choice == 2) {
                             player.mainSkill(enemy);
-                            gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
                         } else {
                             player.normalSkill(enemy);
-                            gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
                         }
+                        gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
+                        gameUI.playerHpBar.setValue(player.hp);
+                        gameUI.enemyHpBar.setValue(enemy.hp);
                         skillChoice.set(true);
                     } else {
                         gameUI.append("1~3 중에서 입력해주세요.");
@@ -159,7 +142,7 @@ public class GameLogic {
         } else {
             gameUI.append("\n플레이어 패배!");
             gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
-            Timer timer = new Timer(5000, e -> System.exit(0));
+            Timer timer = new Timer(2000, e -> System.exit(0));
             timer.setRepeats(false);
             timer.start();
         }
@@ -182,18 +165,18 @@ public class GameLogic {
             int enemyAttack = random.nextInt(3);
             if (enemyAttack == 0) {
                 enemy.ultimate(player);
-                gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
             } else if (enemyAttack == 1) {
                 enemy.mainSkill(player);
-                gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
             } else {
                 enemy.normalSkill(player);
-                gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
             }
+            gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
+            gameUI.playerHpBar.setValue(player.hp);
+            gameUI.enemyHpBar.setValue(enemy.hp);
         } else {
             gameUI.append("\n플레이어 승리!");
             gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
-            Timer timer = new Timer(5000, e -> System.exit(0));
+            Timer timer = new Timer(2000, e -> System.exit(0));
             timer.setRepeats(false);
             timer.start();
         }
@@ -216,138 +199,33 @@ public class GameLogic {
     }
 
     private void startBattle() {
-        // 턴제 게임을 위한 코드
-        // 먼저 턴이 돌게 해야 됨 이걸 어떻게 구현할거냐
-        // 그리고 플레이어의 턴일 때 플레이어가 스킬을 고를 때까지 다음 턴으로 넘어가지 말아야 하고,
-        // 2번째 턴부터는 적 혹은 플레이어가 죽었는지 살았는지에 대해 확인하는 코드 & 종료 코드 필요함
+        //초기 체력 설정
+        gameUI.playerHpBar.setMaximum(player.hp);
+        gameUI.enemyHpBar.setMaximum(enemy.hp);
+        gameUI.playerHpBar.setValue(player.hp);
+        gameUI.enemyHpBar.setValue(enemy.hp);
 
         boolean playerTurn = random.nextBoolean();
 
         gameUI.append(playerTurn ? "\n플레이어가 선공합니다!" : "\n적이 선공합니다!");
 
         if (playerTurn) {
-            //1번째 턴
-            userTurn(skillChoice1);
-            enemyTurn();
-            userTurn(skillChoice2);
-            enemyTurn();
-            userTurn(skillChoice3);
-            enemyTurn();
-            userTurn(skillChoice4);
-            enemyTurn();
-            userTurn(skillChoice5);
-            enemyTurn();
-            userTurn(skillChoice6);
-            enemyTurn();
-            userTurn(skillChoice7);
-            enemyTurn();
-            userTurn(skillChoice8);
-            enemyTurn();
-            userTurn(skillChoice9);
-            enemyTurn();
-            userTurn(skillChoice10);
-            enemyTurn();
-            userTurn(skillChoice11);
-            enemyTurn();
-            userTurn(skillChoice12);
-            enemyTurn();
-            userTurn(skillChoice13);
-            enemyTurn();
-            userTurn(skillChoice14);
-            enemyTurn();
-            userTurn(skillChoice15);
-            enemyTurn();
-            userTurn(skillChoice16);
-            enemyTurn();
-            userTurn(skillChoice17);
-            enemyTurn();
-            userTurn(skillChoice18);
-            enemyTurn();
-            userTurn(skillChoice19);
-            enemyTurn();
-            userTurn(skillChoice20);
-            enemyTurn();
+            for (int i = 0; i < 20; i++) {
+                int reamainigTrun = 19;
+                userTurn(skillChoice[i]);
+                gameUI.turnLabel.setText(reamainigTrun - i + "턴 남았습니다!");
+                enemyTurn();
+            }
             checkVictory();
         } else {
-            enemyTurn();
-            userTurn(skillChoice1);
-            enemyTurn();
-            userTurn(skillChoice2);
-            enemyTurn();
-            userTurn(skillChoice3);
-            enemyTurn();
-            userTurn(skillChoice4);
-            enemyTurn();
-            userTurn(skillChoice5);
-            enemyTurn();
-            userTurn(skillChoice6);
-            enemyTurn();
-            userTurn(skillChoice7);
-            enemyTurn();
-            userTurn(skillChoice8);
-            enemyTurn();
-            userTurn(skillChoice9);
-            enemyTurn();
-            userTurn(skillChoice10);
-            enemyTurn();
-            userTurn(skillChoice11);
-            enemyTurn();
-            userTurn(skillChoice12);
-            enemyTurn();
-            userTurn(skillChoice13);
-            enemyTurn();
-            userTurn(skillChoice14);
-            enemyTurn();
-            userTurn(skillChoice15);
-            enemyTurn();
-            userTurn(skillChoice16);
-            enemyTurn();
-            userTurn(skillChoice17);
-            enemyTurn();
-            userTurn(skillChoice18);
-            enemyTurn();
-            userTurn(skillChoice19);
-            enemyTurn();
-            userTurn(skillChoice20);
+            for (int i = 0; i < 20; i++) {
+                int reamainigTrun = 19;
+                enemyTurn();
+                userTurn(skillChoice[i]);
+                gameUI.turnLabel.setText(reamainigTrun - i + "턴 남았습니다!");
+            }
             checkVictory();
         }
 
     }
 }
-
-//        while (player.alive() && enemy.alive()) {
-//            if (playerTurn) {
-//                gameUI.append("");
-//                gameUI.append("플레이어가 공격할 차례입니다!");
-//                gameUI.append("공격 방식을 정해주세요");
-//                for (int i = 0; i < player.skills.length; i++) {
-//                    gameUI.append((i + 1) + ". " + player.skills[i].name + " 데미지:" + player.skills[i].damage + " 명중률:" + player.skills[i].accuracy + "%");
-//                }
-//                if (userSkillChoice == 1) {
-//                    player.ultimate(enemy);
-//                } else if (choice == 2) {
-//                    player.mainSkill(enemy);
-//                } else {
-//                    player.normalSkill(enemy);
-//                }
-//            } else {
-//                gameUI.append("적이 공격할 차례입니다!");
-//                int enemyAttack = random.nextInt(3);
-//                if (enemyAttack == 0) {
-//                    enemy.ultimate(player);
-//                } else if (enemyAttack == 1) {
-//                    enemy.mainSkill(player);
-//                } else {
-//                    enemy.normalSkill(player);
-//                }
-//            }
-//            playerTurn = !playerTurn;
-//        }
-//        if (!player.alive()) {
-//            gameUI.append("");
-//            gameUI.append("플레이어 패배!");
-//        } else if (!enemy.alive()) {
-//            gameUI.append("");
-//            gameUI.append("플레이어 승리!");
-//        }
-//    }
