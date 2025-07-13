@@ -1,12 +1,12 @@
 package pvp;
 
 class Priest extends Character {
-    Skill judgmentMaul = new Skill("참회의 망치", 50, 60);
-    Skill deflectingWall = new Skill("디플픽트 월", 35, 85);
-    Skill bladePure = new Skill("순백의 칼날", 10, 100);
+    Skill judgmentMaul = new Skill("참회의 망치", 30, 90);
+    Skill deflectingWall = new Skill("디플픽트 월", 24, 95);
+    Skill bladePure = new Skill("순백의 칼날", 12, 100);
 
     Priest(String name, GameUI gameUI) {
-        super(name, 150, gameUI);
+        super(name, 225, gameUI);
         super.skills[0] = judgmentMaul;
         super.skills[1] = deflectingWall;
         super.skills[2] = bladePure;

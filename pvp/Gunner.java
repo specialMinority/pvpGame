@@ -1,12 +1,12 @@
 package pvp;
 
-class gunner extends Character {
-    Skill quantumBomb = new Skill("양자폭탄", 90, 10);
-    Skill raserBazooka = new Skill("레이저바주카", 50, 40);
-    Skill gatlingGun = new Skill("게틀링건", 15, 100);
+class Gunner extends Character {
+    Skill quantumBomb = new Skill("양자폭탄", 60, 55);
+    Skill raserBazooka = new Skill("레이저바주카", 35, 75);
+    Skill gatlingGun = new Skill("게틀링건", 15, 95);
 
-    gunner(String name, GameUI gameUI) {
-        super(name, 120, gameUI);
+    Gunner(String name, GameUI gameUI) {
+        super(name, 170, gameUI);
         super.skills[0] = quantumBomb;
         super.skills[1] = raserBazooka;
         super.skills[2] = gatlingGun;

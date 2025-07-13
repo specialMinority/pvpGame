@@ -1,6 +1,6 @@
 package pvp;
 
-class Character {
+public class Character {
     String name;
     int hp;
     GameUI gameUI;

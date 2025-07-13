@@ -1,12 +1,12 @@
 package pvp;
 
 class Mage extends Character {
-    Skill meteor = new Skill("메테오", 200, 5);
-    Skill fireball = new Skill("파이어볼", 80, 20);
-    Skill rapidFire = new Skill("연속발사", 20, 100);
+    Skill meteor = new Skill("메테오", 90, 40);
+    Skill fireball = new Skill("파이어볼", 45, 70);
+    Skill rapidFire = new Skill("연속발사", 20, 95);
 
     Mage(String name, GameUI gameUI) {
-        super(name, 100, gameUI);
+        super(name, 150, gameUI);
         {
             super.skills[0] = meteor;
             super.skills[1] = fireball;

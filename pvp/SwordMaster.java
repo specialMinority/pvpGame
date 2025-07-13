@@ -1,12 +1,12 @@
 package pvp;
 
 class SwordMaster extends Character {
-    Skill swordDance = new Skill("환영검무", 55, 35);
-    Skill drawSlash = new Skill("발도", 35, 70);
-    Skill swordArt = new Skill("리귀검술", 17, 100);
+    Skill swordDance = new Skill("환영검무", 40, 80);
+    Skill drawSlash = new Skill("발도", 28, 90);
+    Skill swordArt = new Skill("리귀검술", 14, 100);
 
     SwordMaster(String name, GameUI gameUI) {
-        super(name, 120, gameUI);
+        super(name, 180, gameUI);
         super.skills[0] = swordDance;
         super.skills[1] = drawSlash;
         super.skills[2] = swordArt;

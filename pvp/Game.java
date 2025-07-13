@@ -1,5 +1,9 @@
 package pvp;
 
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
 public class Game {
 
     public static void main(String[] args) {
@@ -8,10 +12,24 @@ public class Game {
         bgm.start();
 
         GameUI gameUI = new GameUI();
-        GameLogic gameLogic = new GameLogic(gameUI);
-        gameLogic.gameLogic();
-    }
 
+            gameUI.startButton.addActionListener(e -> {
+                gameUI.showGamePanel();
+                StartThread startThread = new StartThread(gameUI);
+                startThread.start();
+            });
+
+            gameUI.loadButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    gameUI.showGamePanel();
+                    LoadThread loadThread = new LoadThread(gameUI);
+                    loadThread.start();
+                }
+            });
+
+    }
 }
+
 
 
