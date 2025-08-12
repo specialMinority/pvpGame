@@ -12,14 +12,17 @@ public class GameUI {
     JPanel mainPanel = new JPanel(cardLayout);
     JPanel menuPanel = new JPanel();  // 시작 화면
     JPanel gamePanel = new JPanel();  // 게임 화면
-    JTextArea logArea = new JTextArea();
+    public JTextArea logArea = new JTextArea();
     JTextField inputText = new JTextField();
-    JButton submitButton = new JButton("선택");
-    JProgressBar playerHpBar = new JProgressBar();
-    JProgressBar enemyHpBar = new JProgressBar();
+    public JButton submitButton = new JButton("선택");
+    public JProgressBar playerHpBar = new JProgressBar();
+    public JProgressBar enemyHpBar = new JProgressBar();
     JLabel turnLabel = new JLabel("남은 턴이 표시됩니다!", SwingConstants.CENTER);
     JButton saveButton = new JButton("저장");
     JButton resetButton = new JButton("초기화");
+    JButton startButton = new JButton("게임시작");
+    JButton loadButton = new JButton("불러오기");
+    JButton multiButton = new JButton("온라인 대전");
 
     public GameUI() {
         //창 세팅
@@ -31,31 +34,28 @@ public class GameUI {
 
         //초기화면
         menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
-        JButton startButton = new JButton("게임시작");
-        JButton loadButton = new JButton("불러오기");
 
         //여백추가
-        menuPanel.setBorder(BorderFactory.createEmptyBorder(200, 200, 100, 200));
+        menuPanel.setBorder(BorderFactory.createEmptyBorder(150, 200, 100, 200));
 
         //버튼사이즈
         Dimension buttonSize = new Dimension(200, 60); // 너비 200, 높이 60
         startButton.setMaximumSize(buttonSize);
         loadButton.setMaximumSize(buttonSize);
+        multiButton.setMaximumSize(buttonSize);
 
         //가운데정렬
         startButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         loadButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        multiButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // 버튼 사이 여백
         menuPanel.add(startButton);
         menuPanel.add(Box.createRigidArea(new Dimension(0, 20))); // 세로 간격
         menuPanel.add(loadButton);
-
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        menuPanel.add(multiButton);
         mainPanel.add(menuPanel, "menu");
-
-        startButton.addActionListener(e -> {
-            cardLayout.show(mainPanel, "game");
-        });
 
         //게임패널 레이아웃 생성
         gamePanel.setLayout(new BorderLayout());
@@ -75,10 +75,23 @@ public class GameUI {
         gamePanel.add(inputPanel, BorderLayout.SOUTH);
 
         //턴 표시
+        JPanel turnPanel = new JPanel();
+        turnPanel.setLayout(new BoxLayout(turnPanel, BoxLayout.Y_AXIS));
+
         turnLabel.setFont(new Font("맑은 고딕", Font.BOLD, 18));
-        turnLabel.setOpaque(true); // 배경색 보이게 하기
-        turnLabel.setBackground(Color.LIGHT_GRAY); // 배경색
-        turnLabel.setForeground(Color.BLACK); // 글자색
+        turnLabel.setOpaque(true);
+        turnLabel.setForeground(Color.BLACK);
+
+        JLabel alertLabel = new JLabel("저장은 1턴 이상 진행 후에 가능합니다");
+        alertLabel.setFont(new Font("맑은 고딕", Font.BOLD, 10));
+        alertLabel.setOpaque(true);
+        alertLabel.setForeground(Color.RED);
+
+        turnLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        alertLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        turnPanel.add(turnLabel);
+        turnPanel.add(alertLabel);
 
         //플레이어 체력바
         playerHpBar.setMinimum(0);        // 최소값
@@ -94,7 +107,7 @@ public class GameUI {
         statusPanel.setLayout(new BorderLayout());
         statusPanel.add(playerHpBar, BorderLayout.WEST);
         statusPanel.add(enemyHpBar, BorderLayout.EAST);
-        statusPanel.add(turnLabel, BorderLayout.CENTER);
+        statusPanel.add(turnPanel, BorderLayout.CENTER);
         statusPanel.setPreferredSize(new Dimension(200, 50));
         gamePanel.add(statusPanel, BorderLayout.NORTH);
 
@@ -140,7 +153,8 @@ public class GameUI {
         return inputText;
     }
 
-    public JButton getSubmitButton() {
-        return submitButton;
+    public void showGamePanel() {
+        System.out.println("카드전환");
+        cardLayout.show(mainPanel, "game");
     }
 }
