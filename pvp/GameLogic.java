@@ -1,5 +1,11 @@
 package pvp;
 
+import pvp.character.Character;
+import pvp.character.Gunner;
+import pvp.character.Mage;
+import pvp.character.Priest;
+import pvp.character.SwordMaster;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Random;
@@ -12,7 +18,7 @@ public class GameLogic {
     private boolean characterChoice = false;
     private final Random random = new Random();
     private final AtomicBoolean[] skillChoice = new AtomicBoolean[20];
-    private Character player;
+    private pvp.character.Character player;
     private Character enemy;
     private int turnCount;
     private int whatPlayer;

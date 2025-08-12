@@ -1,5 +1,11 @@
 package pvp;
 
+import pvp.character.Character;
+import pvp.character.Gunner;
+import pvp.character.Mage;
+import pvp.character.Priest;
+import pvp.character.SwordMaster;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -13,7 +19,7 @@ public class LoadGameLogic {
     private volatile int choice = -1;
     private final Random random = new Random();
     private final AtomicBoolean[] skillChoice = new AtomicBoolean[20];
-    private Character player;
+    private pvp.character.Character player;
     private Character enemy;
     private int turnCount;
     private int whatPlayer;
