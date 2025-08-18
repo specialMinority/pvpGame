@@ -9,9 +9,9 @@ public class Priest extends Character {
 
     public Priest(String name, GameUI gameUI) {
         super(name, 225, gameUI);
-        super.skills[0] = judgmentMaul;
-        super.skills[1] = deflectingWall;
-        super.skills[2] = bladePure;
+        super.serverSkills[0] = judgmentMaul;
+        super.serverSkills[1] = deflectingWall;
+        super.serverSkills[2] = bladePure;
     }
 
     @Override

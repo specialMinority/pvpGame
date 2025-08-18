@@ -10,9 +10,9 @@ public class Mage extends Character {
     public Mage(String name, GameUI gameUI) {
         super(name, 150, gameUI);
         {
-            super.skills[0] = meteor;
-            super.skills[1] = fireball;
-            super.skills[2] = rapidFire;
+            super.serverSkills[0] = meteor;
+            super.serverSkills[1] = fireball;
+            super.serverSkills[2] = rapidFire;
         }
     }
 

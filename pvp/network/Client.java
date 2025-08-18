@@ -41,9 +41,11 @@ public class Client {
             gameUI.append("서버에 접속됐음");
             gameUI.append("상대와 매칭될 때까지 대기합니다");
 
+            in = new BufferedReader(new InputStreamReader(server.getInputStream()));
+            out = new PrintWriter(server.getOutputStream(), true);
+
             new Thread(() -> {
                 try {
-                    in = new BufferedReader(new InputStreamReader(server.getInputStream()));
                     //매칭 여부 확인
                     connecting.set(Boolean.parseBoolean(in.readLine()));
                     gameUI.append("상대와 매칭되었습니다!\n");
@@ -56,7 +58,7 @@ public class Client {
                         gameUI.append("적이 먼저 공격합니다!");
                     }
 
-                    //상대 캐릭터 선택 확인
+                    //상대 캐릭터 선택 확인 및 생성
                     enemyCharacterChoice = Integer.parseInt(in.readLine());
                     if (enemyCharacterChoice == 1) {
                         gameUI.append("\n상대는 마법사입니다!");
@@ -68,11 +70,18 @@ public class Client {
                         gameUI.append("\n상대는 소드마스터입니다!");
                     }
 
-                    //상대 스킬 선택 확인, 체력 정보 받기
+                    //HP 세팅
+                    int myHpBarSet = Integer.parseInt(in.readLine());
+                    gameUI.playerHpBar.setMaximum(myHpBarSet);
+                    gameUI.playerHpBar.setValue(myHpBarSet);
+                    int enemyHpBarSet = Integer.parseInt(in.readLine());
+                    gameUI.enemyHpBar.setMaximum(enemyHpBarSet);
+                    gameUI.enemyHpBar.setValue(enemyHpBarSet);
+
+                    //전투진행
                     while (true) {
                         String s = in.readLine();
-                        enemySkillChoice = Integer.parseInt(s);
-                        gameUI.append("상대가 고른 스킬은" + enemySkillChoice);
+                        gameUI.append(s);
                         myHp.add(Integer.parseInt(in.readLine()));
                         enemyHp.add(Integer.parseInt(in.readLine()));
                         enemyAlive.add(Boolean.parseBoolean(in.readLine()));
@@ -104,12 +113,7 @@ public class Client {
             gameUI.submitButton.addActionListener(e -> {
                 String input = gameUI.getInputText().getText().trim();
                 int intInput = Integer.parseInt(input);
-                try {
-                    out = new PrintWriter(server.getOutputStream(), true);
-                    out.println(intInput);
-                } catch (Exception e2) {
-                    e2.printStackTrace();
-                }
+                out.println(intInput);
                 if (intInput >= 1 && intInput <= 4) {
                     int choice = intInput;
                     gameUI.append("\n선택된 캐릭터 번호: " + choice);
@@ -141,51 +145,39 @@ public class Client {
                 }
             }
 
-            if (turn && player.alive()) {
+            while (turn && gameUI.playerHpBar.getValue() != 0) {
                 gameUI.append("공격 방식을 정해주세요");
-                for (int i = 0; i < player.skills.length; i++) {
-                    gameUI.append((i + 1) + ". " + player.skills[i].name +
-                            " 데미지:" + player.skills[i].damage +
-                            " 명중률:" + player.skills[i].accuracy + "%");
+                for (int i = 0; i < player.serverSkills.length; i++) {
+                    gameUI.append((i + 1) + ". " + player.serverSkills[i].name +
+                            " 데미지:" + player.serverSkills[i].damage +
+                            " 명중률:" + player.serverSkills[i].accuracy + "%");
                 }
                 gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
 
                 gameUI.submitButton.addActionListener(e -> {
                     String input = gameUI.getInputText().getText().trim();
-                    try {
-                        int val = Integer.parseInt(input);
-                        if (val >= 1 && val <= 3) {
-                            int choice = val;
-                            try {
-                                out = new PrintWriter(server.getOutputStream(), true);
-                                out.println(choice);
-                            } catch (Exception e2) {
-                                e2.printStackTrace();
-                            }
-                            gameUI.append("\n선택된 스킬 번호: " + choice);
-                            gameUI.getInputText().setText("");
-                            if (choice == 1) {
-                                player.ultimate(enemy);
-                            } else if (choice == 2) {
-                                player.mainSkill(enemy);
-                            } else {
-                                player.normalSkill(enemy);
-                            }
-                            gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
+
+                    int val = Integer.parseInt(input);
+                    if (val >= 1 && val <= 3) {
+                        int choice = val;
+                        out.println(choice);
+                        gameUI.append("\n선택된 스킬 번호: " + choice);
+                        gameUI.getInputText().setText("");
+                        if (choice == 1) {
+                            player.ultimate(enemy);
+                        } else if (choice == 2) {
+                            player.mainSkill(enemy);
                         } else {
-                            gameUI.append("1~3 중에서 입력해주세요.");
-                            gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
+                            player.normalSkill(enemy);
                         }
-                    } catch (NumberFormatException ex) {
-                        System.out.println("숫자를 입력해주세요.");
+                        gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
+                    } else {
+                        gameUI.append("1~3 중에서 입력해주세요.");
                         gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
                     }
+
                 });
-
-            } else {
-
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }

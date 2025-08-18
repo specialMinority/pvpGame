@@ -70,10 +70,10 @@ public class LoadGameLogic {
         if (player.alive()) {
             gameUI.append("\n플레이어가 공격할 차례입니다!");
             gameUI.append("공격 방식을 정해주세요");
-            for (int i = 0; i < player.skills.length; i++) {
-                gameUI.append((i + 1) + ". " + player.skills[i].name +
-                        " 데미지:" + player.skills[i].damage +
-                        " 명중률:" + player.skills[i].accuracy + "%");
+            for (int i = 0; i < player.serverSkills.length; i++) {
+                gameUI.append((i + 1) + ". " + player.serverSkills[i].name +
+                        " 데미지:" + player.serverSkills[i].damage +
+                        " 명중률:" + player.serverSkills[i].accuracy + "%");
             }
             gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
 

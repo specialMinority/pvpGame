@@ -9,9 +9,9 @@ public class SwordMaster extends Character {
 
     public SwordMaster(String name, GameUI gameUI) {
         super(name, 180, gameUI);
-        super.skills[0] = swordDance;
-        super.skills[1] = drawSlash;
-        super.skills[2] = swordArt;
+        super.serverSkills[0] = swordDance;
+        super.serverSkills[1] = drawSlash;
+        super.serverSkills[2] = swordArt;
     }
 
     @Override

@@ -9,9 +9,9 @@ public class Gunner extends Character {
 
     public Gunner(String name, GameUI gameUI) {
         super(name, 170, gameUI);
-        super.skills[0] = quantumBomb;
-        super.skills[1] = raserBazooka;
-        super.skills[2] = gatlingGun;
+        super.serverSkills[0] = quantumBomb;
+        super.serverSkills[1] = raserBazooka;
+        super.serverSkills[2] = gatlingGun;
     }
 
     @Override

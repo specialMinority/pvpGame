@@ -7,7 +7,7 @@ public class Character {
     public int hp;
     GameUI gameUI;
 
-    public Skill[] skills = new Skill[3];
+    public Skill[] serverSkills = new Skill[3];
 
     Character(String name, int hp, GameUI gameUI) {
         this.name = name;
