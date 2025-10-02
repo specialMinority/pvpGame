@@ -1,323 +1,273 @@
 package pvp.network;
 
+import pvp.domain.character.*;
+import pvp.domain.skill.JobSkill;
+import pvp.domain.character.Mage;
+
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
-import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static java.lang.Integer.parseInt;
+
 
 public class Server {
-
-    public volatile int client1Hp;
-    public volatile int client2Hp;
-    private boolean whoFirst;
-    AtomicBoolean turn = new AtomicBoolean(whoFirst);
+    public static JobSkill bleedingSkill = new JobSkill("지속데미지", false, -10, 100, -1, 0);
+    public static boolean isCritical = false;
+    public static boolean isHit = false;
+    // 게임 상태 정보
+    public AtomicBoolean turn = new AtomicBoolean(false);
+    // 네트워크
+    ArrayList<Session1> sessions = new ArrayList<>();
     AtomicBoolean gameOver = new AtomicBoolean(false);
-
-
-    public static void main(String[] args) {
-        Server server = new Server();
-        server.server();
-    }
+    // 캐릭터
+    private Job player1;
+    private Job player2;
+    // 스킬 상태 관리
+    private JobSkill skill;
 
     public void server() {
         try {
-            // 서버 소켓 생성 & 클라이언트 연결 받기
-            ServerSocket serverSocket = new ServerSocket(8888);
-            System.out.println("Waiting for connection...");
-            Socket client1 = serverSocket.accept();
-            System.out.println("클라이언트가 접속했습니다");
-            Socket client2 = serverSocket.accept();
-            System.out.println("클라이언트가 접속했습니다");
-            boolean clientConnecting = true;
-
-            // 선공 순서 부여
-            Random random = new Random();
-            whoFirst = random.nextBoolean();
-            boolean whoSecond = !whoFirst;
-
-
-            // 클라1 입출력
-            BufferedReader in1 = new BufferedReader(new InputStreamReader(client1.getInputStream()));
-            PrintWriter out1 = new PrintWriter(client1.getOutputStream(), true);
-
-            // 클라2 입출력
-            BufferedReader in2 = new BufferedReader(new InputStreamReader(client2.getInputStream()));
-            PrintWriter out2 = new PrintWriter(client2.getOutputStream(), true);
-
-            // 연결 알림 + 선공 정보
-            out1.println(clientConnecting);
-            out1.println(whoFirst);
-            out2.println(clientConnecting);
-            out2.println(whoSecond);
-
-            // 캐릭터 선택 받기
-            int client1Choice = Integer.parseInt(in1.readLine());
-            int client2Choice = Integer.parseInt(in2.readLine());
-
-            // 클라1 Hp 세팅
-            if (client1Choice == 1) {
-                client1Hp = 150;
-            } else if (client1Choice == 2) {
-                client1Hp = 170;
-            } else if (client1Choice == 3) {
-                client1Hp = 225;
-            } else {
-                client1Hp = 180;
+            // 클라이언트 연결 받기
+            {
+                ServerSocket serverSocket = new ServerSocket(8888);
+                System.out.println("Waiting for connection...");
+                ConnectTask task = new ConnectTask(serverSocket, sessions);
+                new Thread(task).start();
+                new Thread(task).start();
             }
 
-            // 클라2 Hp 세팅
-            if (client2Choice == 1) {
-                client2Hp = 150;
-            } else if (client2Choice == 2) {
-                client2Hp = 170;
-            } else if (client2Choice == 3) {
-                client2Hp = 225;
-            } else {
-                client2Hp = 180;
-            }
-
-            // 클라1한테 클라2 선택, 내 HP, 상대 HP 전송
-            out1.println(client2Choice);
-            out1.println(client1Hp);
-            out1.println(client2Hp);
-
-            // 클라2한테 클라1 선택, 내 HP, 상대 HP 전송
-            out2.println(client1Choice);
-            out2.println(client2Hp);
-            out2.println(client1Hp);
-
-            // 전투 진행1: 클라1 입력 시 클라2 HP 반영
-            new Thread(() -> {
-                try {
-                    while (!gameOver.get()) {
-                        if (!turn.get()) {
-                            try {
-                                Thread.sleep(1);
-                            } catch (InterruptedException ignored) {
-                            }
-                            continue;
-                        }
-
-                        String s = in1.readLine();
-                        if (s == null) break;
-                        int skillChoice = Integer.parseInt(s);
-
-                        int acc = getAccuracy(client1Choice, skillChoice);
-                        int roll = random.nextInt(100) + 1;
-                        boolean hit = (roll <= acc);
-                        int dmg;
-                        if (hit) {
-                            dmg = getDamage(client1Choice, skillChoice);
-                        } else {
-                            dmg = 0;
-                        }
-
-                        if (hit) {
-                            client2Hp = client2Hp - dmg;
-                            if (client2Hp < 0) {
-                                client2Hp = 0;
-                            }
-                        }
-
-                        // 공격자, 스킬, 명중여부, 데미지, HP1, HP2, check
-                        out1.println(1);
-                        out1.println(skillChoice);
-                        if (hit) {
-                            out1.println(1);
-                        } else {
-                            out1.println(0);
-                        }
-                        out1.println(dmg);
-                        out1.println(client1Hp);
-                        out1.println(client2Hp);
-                        int check;
-                        if (client2Hp <= 0) {
-                            check = 0; // 게임 끝
-                        } else {
-                            check = 1; // 턴 넘기기
-                        }
-                        out1.println(check);
-
-                        out2.println(1);
-                        out2.println(skillChoice);
-                        if (hit) {
-                            out2.println(1);
-                        } else {
-                            out2.println(0);
-                        }
-                        out2.println(dmg);
-                        out2.println(client1Hp);
-                        out2.println(client2Hp);
-                        out2.println(check);
-
-                        if (client2Hp <= 0) {
-                            gameOver.set(true);
-                            break;
-                        }
-
-                        // 턴 교대
-                        turn.set(false);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    gameOver.set(true);
+            // 연결성공(매칭) 대기 & 성공 여부 전송
+            //todo waitingMatching 개선하기(연결과 매칭이 서로 독립적으로 동작하도록 개선하기)
+            {
+                waitingMatching();
+                if (sessions.get(0).in.readLine().trim().equals("requestMatching")) {
+                    sessions.get(0).out.println("isMatched=true");
                 }
+                if (sessions.get(1).in.readLine().trim().equals("requestMatching")) {
+                    sessions.get(1).out.println("isMatched=true");
+                }
+            }
+
+            // 선공 정보 전송
+            {
+                // 공격 순서 정하기
+                boolean whoFirst = new Random().nextBoolean();
+                turn.set(whoFirst);
+                sessions.get(0).out.println("whoFirst=" + whoFirst);
+                sessions.get(1).out.println("whoFirst=" + !whoFirst);
+            }
+
+            // 캐릭터 생성
+            {
+                // 캐릭터 선택 받기
+                int client1Choice = parseInt(sessions.get(0).in.readLine());
+                int client2Choice = parseInt(sessions.get(1).in.readLine());
+                // 캐릭터 생성
+                player1 = createChar(client1Choice);
+                player2 = createChar(client2Choice);
+                // 적 캐릭터 정보 전송
+                if (sessions.get(0).in.readLine().trim().equals("requestStatus")) {
+                    sendStatus(sessions.get(0).out, client2Choice, player1.getHp(), player2.getHp(), player1.getMp(), player2.getMp());
+                }
+                if (sessions.get(1).in.readLine().trim().equals("requestStatus")) {
+                    sendStatus(sessions.get(1).out, client1Choice, player2.getHp(), player1.getHp(), player2.getMp(), player1.getMp());
+                }
+            }
+
+
+            // 전투 진행1: 클라1 공격 시 클라2 HP 반영
+            new Thread(() -> {
+                battleLogic(sessions.get(0).in, 1);
             }).start();
 
-            // 전투 진행2: 클라2 입력 시 클라1 HP 반영
+            // 전투 진행2: 클라2 공격 시 클라1 HP 반영
             new Thread(() -> {
-                try {
-                    while (!gameOver.get()) {
-                        if (turn.get()) {
-                            try {
-                                Thread.sleep(1);
-                            } catch (InterruptedException ignored) {
-                            }
-                            continue;
-                        }
-
-                        String s = in2.readLine();
-                        if (s == null) break;
-                        int skillChoice = Integer.parseInt(s);
-
-                        int acc = getAccuracy(client2Choice, skillChoice);
-                        int roll = random.nextInt(100) + 1;
-                        boolean hit = (roll <= acc);
-                        int dmg;
-                        if (hit) {
-                            dmg = getDamage(client2Choice, skillChoice);
-                        } else {
-                            dmg = 0;
-                        }
-
-                        if (hit) {
-                            client1Hp = client1Hp - dmg;
-                            if (client1Hp < 0) {
-                                client1Hp = 0;
-                            }
-                        }
-
-                        out1.println(2);
-                        out1.println(skillChoice);
-                        if (hit) {
-                            out1.println(1);
-                        } else {
-                            out1.println(0);
-                        }
-                        out1.println(dmg);
-                        out1.println(client1Hp);
-                        out1.println(client2Hp);
-                        int check2;
-                        if (client1Hp <= 0) {
-                            check2 = 0;
-                        } else {
-                            check2 = 1;
-                        }
-                        out1.println(check2);
-
-                        out2.println(2);
-                        out2.println(skillChoice);
-                        if (hit) {
-                            out2.println(1);
-                        } else {
-                            out2.println(0);
-                        }
-                        out2.println(dmg);
-                        out2.println(client1Hp);
-                        out2.println(client2Hp);
-                        out2.println(check2);
-
-                        if (client1Hp <= 0) {
-                            gameOver.set(true);
-                            break;
-                        }
-
-                        turn.set(true);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    gameOver.set(true);
-                }
+                battleLogic(sessions.get(1).in, 2);
             }).start();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private int getDamage(int characterChoice, int skillChoice) {
-        if (characterChoice == 1) { // Mage
-            if (skillChoice == 1) {
-                return 90; // 메테오
-            } else if (skillChoice == 2) {
-                return 45; // 파이어볼
-            } else {
-                return 20; // 연속발사
+    //todo 임계영역 공부하고 임계영역으로 바꾸기
+    private void waitingMatching() {
+        while (true) {
+            if (sessions.size() == 2) {
+                break;
             }
-        } else if (characterChoice == 2) { // Gunner
-            if (skillChoice == 1) {
-                return 60; // 양자폭탄
-            } else if (skillChoice == 2) {
-                return 35; // 레이저바주카
-            } else {
-                return 15; // 게틀링건
-            }
-        } else if (characterChoice == 3) { // Priest
-            if (skillChoice == 1) {
-                return 30; // 참회의 망치
-            } else if (skillChoice == 2) {
-                return 24; // 디플렉트 월
-            } else {
-                return 12; // 순백의 칼날
-            }
-        } else {
-            if (skillChoice == 1) {
-                return 40; // 환영검무
-            } else if (skillChoice == 2) {
-                return 28; // 발도
-            } else {
-                return 14; // 리귀검술
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException ignored) {
             }
         }
     }
 
-    private int getAccuracy(int characterChoice, int skillChoice) {
-        if (characterChoice == 1) { // Mage
-            if (skillChoice == 1) {
-                return 40; // 메테오
-            } else if (skillChoice == 2) {
-                return 70; // 파이어볼
-            } else {
-                return 95; // 연속발사
+    private Job createChar(int choice) {
+        return switch (choice) {
+            case 1 -> new Mage();
+            case 2 -> new Gunner();
+            case 3 -> new Priest();
+            default -> new SwordMaster();
+        };
+    }
+
+    private void sendStatus(PrintWriter out, int enemyChoice, int myHp, int enemyHp, int myMp, int enemyMp) {
+        HashMap<String, Integer> status = new HashMap<>();
+        status.put("enemyChoice", enemyChoice);
+        status.put("myHp", myHp);
+        status.put("enemyHp", enemyHp);
+        status.put("myMp", myMp);
+        status.put("enemyMp", enemyMp);
+        out.println("enemyChoice=" + enemyChoice + ",myHp=" + myHp + ",enemyHp=" + enemyHp + ",myMp=" + myMp + ",enemyMp=" + enemyMp);
+    }
+
+    private void battleLogic(BufferedReader in, int client) {
+        try {
+            while (!gameOver.get()) {
+                // 자신의 턴이 아니면 대기
+                if (client == 1 && !turn.get() || client == 2 && turn.get()) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ignored) {
+                    }
+                } else {
+                    // 스킬 선택 받기
+                    String s = in.readLine();
+                    if (s == null) {
+                        break;
+                    }
+                    int skillChoice = parseInt(s);
+
+                    // 데미지를 상대 HP에 반영
+                    applyDamage(client, skillChoice);
+
+                    // 생존 확인
+                    int check;
+                    if (client == 1) {
+                        if (player2.getHp() <= 0) {
+                            check = 0;
+                        } else {
+                            check = 1;
+                        }
+                    } else {
+                        if (player1.getHp() <= 0) {
+                            check = 0;
+                        } else {
+                            check = 1;
+                        }
+                    }
+
+                    // 공격 결과 전송
+                    if (in.readLine().trim().equals("requestAttackResult")) {
+                        sendResult(sessions.get(0).out, sessions.get(1).out, client, skillChoice, check);
+                    }
+
+                    // HP가 0이면 gameover
+                    if (player1.getHp() <= 0 || player2.getHp() <= 0) {
+                        gameOver.set(true);
+                        break;
+                    }
+
+                    // 턴 넘기기
+                    if (client == 1) {
+                        turn.set(false);
+                    } else {
+                        turn.set(true);
+                    }
+                }
             }
-        } else if (characterChoice == 2) { // Gunner
-            if (skillChoice == 1) {
-                return 55; // 양자폭탄
-            } else if (skillChoice == 2) {
-                return 75; // 레이저바주카
-            } else {
-                return 95; // 게틀링건
+        } catch (Exception e) {
+            e.printStackTrace();
+            gameOver.set(true);
+        }
+    }
+
+    private void applyDamage(int client, int skillChoice) {
+        if (client == 1) {
+            skill = player1.getServerSkill(skillChoice - 1);
+            if (player2.getBleeding() > 0) {
+                player2 = player2.applySkill(bleedingSkill); // 지속 데미지 스킬 로직
             }
-        } else if (characterChoice == 3) { // Priest
-            if (skillChoice == 1) {
-                return 90; // 참회의 망치
-            } else if (skillChoice == 2) {
-                return 95; // 디플렉트 월
+            if (skill.isSelfHeal()) {
+                player1 = player1.applySkill(skill);// HP 회복 스킬 로직
             } else {
-                return 100; // 순백의 칼날
+                player2 = player2.applySkill(skill); // 일반 스킬 로직
             }
         } else {
-            if (skillChoice == 1) {
-                return 80; // 환영검무
-            } else if (skillChoice == 2) {
-                return 90; // 발도
+            skill = player2.getServerSkill(skillChoice - 1);
+            if (player1.getBleeding() > 0) {
+                player1 = player1.applySkill(bleedingSkill); // 지속 데미지 스킬 로직
+            }
+            if (skill.isSelfHeal()) {
+                player2 = player2.applySkill(skill);// HP 회복 스킬 로직
             } else {
-                return 100; // 리귀검술
+                player1 = player1.applySkill(skill); // 일반 스킬 로직
             }
         }
     }
 
+    private void sendResult(PrintWriter out1, PrintWriter out2, int client, int skillChoice, int check) {
+        int hit;
+        if (isHit) {
+            hit = 1;
+        } else {
+            hit = 0;
+        }
+        int critical;
+        if (isCritical) {
+            critical = 1;
+        } else {
+            critical = 0;
+        }
+
+        HashMap<String, Integer> result = new HashMap<>();
+        result.put("client", client);
+        result.put("skillChoice", skillChoice);
+        result.put("isHit", hit);
+        result.put("isCritical", critical);
+        result.put("damage", skill.effectValue());
+        result.put("player1Hp", player1.getHp());
+        result.put("player2Hp", player2.getHp());
+        result.put("player1Mp", player1.getMp());
+        result.put("player2Mp", player2.getMp());
+        result.put("check", check);
+
+        out1.println(
+                "client=" + client +
+                        ",skillChoice=" + skillChoice +
+                        ",isHit=" + hit +
+                        ",isCritical=" + critical +
+                        ",damage=" + skill.effectValue() +
+                        ",player1Hp=" + player1.getHp() +
+                        ",player2Hp=" + player2.getHp() +
+                        ",player1Mp=" + player1.getMp() +
+                        ",player2Mp=" + player2.getMp() +
+                        ",check=" + check
+        );
+
+        out2.println(
+                "client=" + client +
+                        ",skillChoice=" + skillChoice +
+                        ",isHit=" + hit +
+                        ",isCritical=" + critical +
+                        ",damage=" + skill.effectValue() +
+                        ",player1Hp=" + player1.getHp() +
+                        ",player2Hp=" + player2.getHp() +
+                        ",player1Mp=" + player1.getMp() +
+                        ",player2Mp=" + player2.getMp() +
+                        ",check=" + check
+        );
+
+        // 초기화
+        isCritical = false;
+        isHit = false;
+    }
 }
+
+// 서버에 스레드가 있고 요청을 받으면 해당 정보를 보내줌
+// 요청에 대한 규칙을 정하고 정해진 규칙에 따라 정보를 줌

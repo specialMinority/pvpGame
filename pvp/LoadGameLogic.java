@@ -47,6 +47,7 @@ public class LoadGameLogic {
         startBattle();
     }
 
+    //todo GameLogic LoadLogic 합치기
     private void loadGame(String fileName) {
         try {
             BufferedReader reader = new BufferedReader(new FileReader(fileName));

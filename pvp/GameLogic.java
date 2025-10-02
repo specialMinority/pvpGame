@@ -18,7 +18,7 @@ public class GameLogic {
     private boolean characterChoice = false;
     private final Random random = new Random();
     private final AtomicBoolean[] skillChoice = new AtomicBoolean[20];
-    private pvp.character.Character player;
+    private Character player;
     private Character enemy;
     private int turnCount;
     private int whatPlayer;

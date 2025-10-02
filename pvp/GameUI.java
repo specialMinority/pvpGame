@@ -15,11 +15,17 @@ public class GameUI {
     public JTextArea logArea = new JTextArea();
     JTextField inputText = new JTextField();
     public JButton submitButton = new JButton("선택");
+
+    // HP/MP 바
     public JProgressBar playerHpBar = new JProgressBar();
     public JProgressBar enemyHpBar = new JProgressBar();
+    public JProgressBar playerMpBar = new JProgressBar(); // 추가
+    public JProgressBar enemyMpBar = new JProgressBar();  // 추가
+
     JLabel turnLabel = new JLabel("남은 턴이 표시됩니다!", SwingConstants.CENTER);
     JButton saveButton = new JButton("저장");
-    JButton resetButton = new JButton("초기화");
+    public JButton retryButton = new JButton("재도전");
+    public JButton exitButton = new JButton("끝내기");
     JButton startButton = new JButton("게임시작");
     JButton loadButton = new JButton("불러오기");
     JButton multiButton = new JButton("온라인 대전");
@@ -93,42 +99,68 @@ public class GameUI {
         turnPanel.add(turnLabel);
         turnPanel.add(alertLabel);
 
-        //플레이어 체력바
-        playerHpBar.setMinimum(0);        // 최소값
-        playerHpBar.setStringPainted(true); // 숫자 표시 여부
-        playerHpBar.setForeground(Color.BLUE); // 채워진 부분 색상
+        // ── HP/MP 바 공통 설정
+        configureBar(playerHpBar, Color.BLUE);
+        configureBar(enemyHpBar, Color.RED);
+        configureBar(playerMpBar, Color.CYAN);     // MP 색상
+        configureBar(enemyMpBar, Color.MAGENTA);   // MP 색상
 
-        //적 체력바
-        enemyHpBar.setMinimum(0);        // 최소값
-        enemyHpBar.setStringPainted(true); // 숫자 표시 여부
-        enemyHpBar.setForeground(Color.RED); // 채워진 부분 색상
+        // 좌/우 스택: HP 위, MP 아래
+        JPanel leftStack = new JPanel();
+        leftStack.setLayout(new BoxLayout(leftStack, BoxLayout.Y_AXIS));
+        leftStack.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 8));
+        JLabel leftHpLabel = new JLabel("내 HP");
+        JLabel leftMpLabel = new JLabel("내 MP");
+        leftStack.add(leftHpLabel);
+        leftStack.add(playerHpBar);
+        leftStack.add(Box.createRigidArea(new Dimension(0, 4)));
+        leftStack.add(leftMpLabel);
+        leftStack.add(playerMpBar);
+        leftStack.setPreferredSize(new Dimension(240, 60));
 
-        JPanel statusPanel = new JPanel();
-        statusPanel.setLayout(new BorderLayout());
-        statusPanel.add(playerHpBar, BorderLayout.WEST);
-        statusPanel.add(enemyHpBar, BorderLayout.EAST);
+        JPanel rightStack = new JPanel();
+        rightStack.setLayout(new BoxLayout(rightStack, BoxLayout.Y_AXIS));
+        rightStack.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 4));
+        JLabel rightHpLabel = new JLabel("적 HP");
+        JLabel rightMpLabel = new JLabel("적 MP");
+        rightStack.add(rightHpLabel);
+        rightStack.add(enemyHpBar);
+        rightStack.add(Box.createRigidArea(new Dimension(0, 4)));
+        rightStack.add(rightMpLabel);
+        rightStack.add(enemyMpBar);
+        rightStack.setPreferredSize(new Dimension(240, 60));
+
+        // 상단 상태 패널
+        JPanel statusPanel = new JPanel(new BorderLayout());
+        statusPanel.add(leftStack, BorderLayout.WEST);
         statusPanel.add(turnPanel, BorderLayout.CENTER);
-        statusPanel.setPreferredSize(new Dimension(200, 50));
+        statusPanel.add(rightStack, BorderLayout.EAST);
+        statusPanel.setPreferredSize(new Dimension(200, 90)); // MP 추가로 높이 확보
         gamePanel.add(statusPanel, BorderLayout.NORTH);
 
-        //저장, 불러오기, 초기화 버튼
+        //저장, 불러오기, 재도전, 끝내기 버튼
         JPanel saveButtonPanel = new JPanel();
         saveButtonPanel.setLayout(new BoxLayout(saveButtonPanel, BoxLayout.Y_AXIS)); // 수직 정렬
 
         // 버튼 크기 고정
         Dimension buttonsSize = new Dimension(100, 30);
         saveButton.setMaximumSize(buttonsSize);
-        resetButton.setMaximumSize(buttonsSize);
+        retryButton.setMaximumSize(buttonsSize);
+        exitButton.setMaximumSize(buttonSize);
 
         saveButton.setBackground(Color.LIGHT_GRAY); // 배경색 변경
         saveButton.setOpaque(true);                 // 배경색 보이게 설정
-        resetButton.setBackground(Color.LIGHT_GRAY); // 배경색 변경
-        resetButton.setOpaque(true);                 // 배경색 보이게 설정
+        retryButton.setBackground(Color.LIGHT_GRAY); // 배경색 변경
+        retryButton.setOpaque(true);                 // 배경색 보이게 설정
+        exitButton.setBackground(Color.LIGHT_GRAY);
+        exitButton.setOpaque(true);
 
         // 위로 몰기 위해 빈 공간 추가 없이 그냥 add
         saveButtonPanel.add(saveButton);
         saveButtonPanel.add(Box.createRigidArea(new Dimension(0, 5))); // 간격
-        saveButtonPanel.add(resetButton);
+        saveButtonPanel.add(retryButton);
+        saveButtonPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        saveButtonPanel.add(exitButton);
 
         // 오른쪽 상단에 붙이기 위해 FlowLayout 사용
         JPanel eastPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 10)); // 위쪽에 붙이기
@@ -145,12 +177,25 @@ public class GameUI {
         frame.setVisible(true);
     }
 
+    // 공통 바 설정 함수
+    private void configureBar(JProgressBar bar, Color fg) {
+        bar.setMinimum(0);
+        bar.setStringPainted(true);
+        bar.setForeground(fg);
+        bar.setPreferredSize(new Dimension(220, 18));
+    }
+
     public void append(String text) {
         logArea.append(text + "\n");
     }
 
     public JTextField getInputText() {
         return inputText;
+    }
+
+    public void showMenuPanel() {
+        System.out.println("카드전환");
+        cardLayout.show(mainPanel, "menu");
     }
 
     public void showGamePanel() {

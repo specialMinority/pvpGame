@@ -12,6 +12,6 @@ public class Skill {
     }
 
     boolean hit() {
-        return new java.util.Random().nextInt(100) < accuracy;
+        return new java.util.Random().nextInt(100) + 1 < accuracy;
     }
 }
