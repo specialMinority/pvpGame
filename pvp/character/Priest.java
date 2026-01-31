@@ -3,43 +3,43 @@ package pvp.character;
 import pvp.GameUI;
 
 public class Priest extends Character {
-    Skill judgmentMaul = new Skill("참회의 망치", 30, 90);
-    Skill deflectingWall = new Skill("디플픽트 월", 24, 95);
-    Skill bladePure = new Skill("순백의 칼날", 12, 100);
+    Skill holyGrace = new Skill("神聖なる恩寵", 50, 60, 30);
+    Skill holyLight = new Skill("聖なる光", 30, 80, 20);
+    Skill punch = new Skill("拳", 15, 95, 0);
 
     public Priest(String name, GameUI gameUI) {
-        super(name, 225, gameUI);
-        super.serverSkills[0] = judgmentMaul;
-        super.serverSkills[1] = deflectingWall;
-        super.serverSkills[2] = bladePure;
+        super(name, 225, 180, gameUI, Type.PRIEST);
+        super.serverSkills[0] = holyGrace;
+        super.serverSkills[1] = holyLight;
+        super.serverSkills[2] = punch;
     }
 
     @Override
     public void ultimate(Character target) {
-        gameUI.append(name + "가 참회의 망치를 시전합니다!");
-        if (judgmentMaul.hit()) {
-            target.takeDamage(judgmentMaul.damage);
-            gameUI.append("명중! " + target.name + "의 체력: " + target.hp);
+        gameUI.append(name + "が神聖なる恩寵を使用しました！");
+        if (holyGrace.hit()) {
+            target.takeDamage(holyGrace.damage);
+            gameUI.append("命中！ " + target.name + "の体力: " + target.hp);
         } else {
-            gameUI.append("실패!");
+            gameUI.append("失敗！");
         }
     }
 
     @Override
     public void mainSkill(Character target) {
-        gameUI.append(name + "가 디플렉트 월을 시전합니다!");
-        if (deflectingWall.hit()) {
-            target.takeDamage(deflectingWall.damage);
-            gameUI.append("명중! " + target.name + "의 체력: " + target.hp);
+        gameUI.append(name + "が聖なる光を使用しました！");
+        if (holyLight.hit()) {
+            target.takeDamage(holyLight.damage);
+            gameUI.append("命中！ " + target.name + "の体力: " + target.hp);
         } else {
-            gameUI.append("실패!");
+            gameUI.append("失敗！");
         }
     }
 
     @Override
     public void normalSkill(Character target) {
-        gameUI.append(name + "가 순백의 칼날을 시전합니다!");
-        target.takeDamage(bladePure.damage);
-        gameUI.append("명중! " + target.name + "의 체력: " + target.hp);
+        gameUI.append(name + "が拳を使用しました！");
+        target.takeDamage(punch.damage);
+        gameUI.append("命中！ " + target.name + "の体力: " + target.hp);
     }
 }

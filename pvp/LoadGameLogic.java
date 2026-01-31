@@ -22,8 +22,8 @@ public class LoadGameLogic {
     private pvp.character.Character player;
     private Character enemy;
     private int turnCount;
-    private int whatPlayer;
-    private int whatEnemy;
+    private int playerTypeIndex;
+    private int enemyTypeIndex;
     boolean playerTurn;
     private int playerHp;
     private int enemyHp;
@@ -31,8 +31,8 @@ public class LoadGameLogic {
     private int loadedEnemyHp;
     private int loadedTurnCount;
     private boolean loadedPlayerTurn;
-    private int loadedWhatPlayer;
-    private int loadedWhatEnemy;
+    private int loadedPlayerTypeIndex;
+    private int loadedEnemyTypeIndex;
     private int maximumPlayerHp;
     private int maximumEnemyHP;
 
@@ -47,10 +47,19 @@ public class LoadGameLogic {
         startBattle();
     }
 
+    private java.awt.event.ActionListener currentListener;
+
+    private void setSubmitListener(java.awt.event.ActionListener listener) {
+        if (currentListener != null) {
+            gameUI.submitButton.removeActionListener(currentListener);
+        }
+        currentListener = listener;
+        gameUI.submitButton.addActionListener(currentListener);
+    }
+    
     //todo GameLogic LoadLogic 합치기
     private void loadGame(String fileName) {
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(fileName));
+        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
             String line = reader.readLine();
             String[] parts = line.split(",");
 
@@ -58,110 +67,10 @@ public class LoadGameLogic {
             loadedEnemyHp = Integer.parseInt(parts[1]);
             loadedTurnCount = Integer.parseInt(parts[2]);
             loadedPlayerTurn = Boolean.parseBoolean(parts[3]);
-            loadedWhatPlayer = Integer.parseInt(parts[4]);
-            loadedWhatEnemy = Integer.parseInt(parts[5]);
-
-            reader.close();
+            loadedPlayerTypeIndex = Integer.parseInt(parts[4]);
+            loadedEnemyTypeIndex = Integer.parseInt(parts[5]);
         } catch (IOException | NumberFormatException e) {
             e.printStackTrace();
-        }
-    }
-
-    private void userTurn(AtomicBoolean skillChoice) {
-        if (player.alive()) {
-            gameUI.append("\n플레이어가 공격할 차례입니다!");
-            gameUI.append("공격 방식을 정해주세요");
-            for (int i = 0; i < player.serverSkills.length; i++) {
-                gameUI.append((i + 1) + ". " + player.serverSkills[i].name +
-                        " 데미지:" + player.serverSkills[i].damage +
-                        " 명중률:" + player.serverSkills[i].accuracy + "%");
-            }
-            gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
-
-            gameUI.submitButton.addActionListener(e -> {
-                String input = gameUI.getInputText().getText().trim();
-                try {
-                    int val = Integer.parseInt(input);
-                    if (val >= 1 && val <= 3) {
-                        choice = val;
-                        gameUI.append("\n선택된 스킬 번호: " + choice);
-                        gameUI.getInputText().setText("");
-                        if (choice == 1) {
-                            player.ultimate(enemy);
-                        } else if (choice == 2) {
-                            player.mainSkill(enemy);
-                        } else {
-                            player.normalSkill(enemy);
-                        }
-                        gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
-                        gameUI.playerHpBar.setValue(player.hp);
-                        gameUI.enemyHpBar.setValue(enemy.hp);
-                        skillChoice.set(true);
-                    } else {
-                        gameUI.append("1~3 중에서 입력해주세요.");
-                        gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
-                    }
-                } catch (NumberFormatException ex) {
-                    System.out.println("숫자를 입력해주세요.");
-                    gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
-                }
-            });
-        } else {
-            gameUI.append("\n플레이어 패배!");
-            gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
-            Timer timer = new Timer(2000, e -> System.exit(0));
-            timer.setRepeats(false);
-            timer.start();
-        }
-
-        // 선택될 때까지 대기
-        while (!skillChoice.get()) {
-            System.out.println("5초마다 출력됩니다!");
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    private void enemyTurn() {
-
-        if (enemy.alive()) {
-            gameUI.append("\n적이 공격할 차례입니다!");
-            int enemyAttack = random.nextInt(3);
-            if (enemyAttack == 0) {
-                enemy.ultimate(player);
-            } else if (enemyAttack == 1) {
-                enemy.mainSkill(player);
-            } else {
-                enemy.normalSkill(player);
-            }
-            gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
-            gameUI.playerHpBar.setValue(player.hp);
-            gameUI.enemyHpBar.setValue(enemy.hp);
-        } else {
-            gameUI.append("\n플레이어 승리!");
-            gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
-            Timer timer = new Timer(2000, e -> System.exit(0));
-            timer.setRepeats(false);
-            timer.start();
-        }
-    }
-
-    private void checkVictory() {
-        if (player.hp > enemy.hp)  {
-            gameUI.append("\n플레이어 승리!");
-            gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
-            Timer timer = new Timer(5000, e -> System.exit(0));
-            timer.setRepeats(false);
-            timer.start();
-        } else {
-            gameUI.append("\n플레이어 패배!");
-            gameUI.logArea.setCaretPosition(gameUI.logArea.getDocument().getLength());
-            Timer timer = new Timer(5000, e -> System.exit(0));
-            timer.setRepeats(false);
-            timer.start();
         }
     }
 
@@ -175,8 +84,8 @@ public class LoadGameLogic {
                                 enemyHp + "," +
                                 turnCount + "," +
                                 playerTurn + "," +
-                                whatPlayer + "," +
-                                whatEnemy
+                                playerTypeIndex + "," +
+                                enemyTypeIndex
                 );
                 fileWriter.close();
             } catch (IOException ex) {
@@ -195,106 +104,94 @@ public class LoadGameLogic {
         loadGame("save.txt");
 
         // 캐릭터 생성
-        if (loadedWhatPlayer == 0){
-            player = new Mage("player", gameUI);
-        } else if (loadedWhatPlayer == 1){
-            player = new Gunner("player", gameUI);
-        } else if (loadedWhatPlayer == 2){
-            player = new Priest("player", gameUI);
-        } else {
-            player = new SwordMaster("player", gameUI);
+        switch (loadedPlayerTypeIndex) {
+            case 0 -> player = new Mage("player", gameUI);
+            case 1 -> player = new Gunner("player", gameUI);
+            case 2 -> player = new Priest("player", gameUI);
+            default -> player = new SwordMaster("player", gameUI);
         }
 
-        if (loadedWhatEnemy == 0){
-            enemy = new Mage("enemy", gameUI);
-        } else if (loadedWhatEnemy == 1){
-            enemy = new Gunner("enemy", gameUI);
-        } else if (loadedWhatEnemy == 2){
-            enemy = new Priest("enemy", gameUI);
-        } else {
-            enemy = new SwordMaster("enemy", gameUI);
+        switch (loadedEnemyTypeIndex) {
+            case 0 -> enemy = new Mage("enemy", gameUI);
+            case 1 -> enemy = new Gunner("enemy", gameUI);
+            case 2 -> enemy = new Priest("enemy", gameUI);
+            default -> enemy = new SwordMaster("enemy", gameUI);
         }
 
-        String enemyCha;
-        if (enemy.hp == 150) {
-            enemyCha = "마법사";
-        } else if (enemy.hp == 170) {
-            enemyCha = "거너";
-        } else if (enemy.hp == 225) {
-            enemyCha = "프리스트";
-        } else {
-            enemyCha = "소드마스터";
-        }
-        gameUI.append("적의 캐릭터는" + enemyCha + "입니다!");
+        String enemyCha = switch (enemy.type) {
+            case MAGE -> "メイジ";
+            case GUNNER -> "ガンナー";
+            case PRIEST -> "プリースト";
+            default -> "ソードマスター";
+        };
+        gameUI.append("敵のキャラクターは" + enemyCha + "です！");
 
-        String playerCha;
-        if (player.hp == 150) {
-            playerCha = "마법사";
-        } else if (player.hp == 170) {
-            playerCha = "거너";
-        } else if (player.hp == 225) {
-            playerCha = "프리스트";
-        } else {
-            playerCha = "소드마스터";
-        }
-        gameUI.append("나의 캐릭터는" + playerCha + "입니다!");
+        String playerCha = switch (player.type) {
+            case MAGE -> "メイジ";
+            case GUNNER -> "ガンナー";
+            case PRIEST -> "プリースト";
+            default -> "ソードマスター";
+        };
+        gameUI.append("あなたのキャラクターは" + playerCha + "です！");
 
         //저장된 체력으로 초기화
         player.hp = loadedPlayerHp;
         enemy.hp = loadedEnemyHp;
 
         //최대 체력 설정
-        if (loadedWhatPlayer == 0){
-            maximumPlayerHp = 150;
-        } else if (loadedWhatPlayer == 1){
-            maximumPlayerHp = 170;
-        } else if (loadedWhatPlayer == 2){
-            maximumPlayerHp = 225;
-        } else {
-            maximumPlayerHp = 180;
+        switch (loadedPlayerTypeIndex) {
+            case 0 -> maximumPlayerHp = 150;
+            case 1 -> maximumPlayerHp = 170;
+            case 2 -> maximumPlayerHp = 225;
+            default -> maximumPlayerHp = 180;
         }
 
-        if (loadedWhatEnemy == 0){
-            maximumEnemyHP = 150;
-        } else if (loadedWhatEnemy == 1){
-            maximumEnemyHP = 170;
-        } else if (loadedWhatEnemy == 2){
-            maximumEnemyHP = 225;
-        } else {
-            maximumEnemyHP = 180;
+        switch (loadedEnemyTypeIndex) {
+            case 0 -> maximumEnemyHP = 150;
+            case 1 -> maximumEnemyHP = 170;
+            case 2 -> maximumEnemyHP = 225;
+            default -> maximumEnemyHP = 180;
         }
 
         //체력bar 설정
-        gameUI.playerHpBar.setMaximum(maximumPlayerHp);
-        gameUI.enemyHpBar.setMaximum(maximumEnemyHP);
-        gameUI.playerHpBar.setValue(loadedPlayerHp);
-        gameUI.enemyHpBar.setValue(loadedEnemyHp);
+        gameUI.playerHpBar.setMaximum(player.maxHp);
+        gameUI.enemyHpBar.setMaximum(enemy.maxHp);
+        gameUI.playerHpBar.setValue(player.hp);
+        gameUI.enemyHpBar.setValue(enemy.hp);
+
+        //마나bar 설정
+        gameUI.playerMpBar.setMaximum(player.maxMp);
+        gameUI.enemyMpBar.setMaximum(enemy.maxMp);
+        gameUI.playerMpBar.setValue(player.mp);
+        gameUI.enemyMpBar.setValue(enemy.mp);
 
         playerTurn = loadedPlayerTurn;
-        gameUI.append(playerTurn ? "\n플레이어가 선공입니다!" : "\n적이 선공입니다!");
+        gameUI.append(playerTurn ? "\nプレイヤーが先攻です！" : "\n敵が先攻です！");
+        
+        pvp.logic.BattleEngine engine = new pvp.logic.BattleEngine(gameUI, player, enemy);
 
         if (playerTurn) {
             saveGame();
             for (int i = 0; i < loadedTurnCount; i++) {
-                userTurn(skillChoice[i]);
-                enemyTurn();
-                turnCount = loadedTurnCount - i;
-                gameUI.turnLabel.setText(turnCount + "턴 남았습니다!");
+                engine.processUserTurn(skillChoice[i]);
+                engine.processEnemyTurn();
+                turnCount = i + 1;
+                gameUI.turnLabel.setText(turnCount + "ターン経過しました！");
                 playerHp = player.hp;
                 enemyHp = enemy.hp;
             }
-            checkVictory();
+            engine.checkVictory();
         } else {
             saveGame();
             for (int i = 0; i < 20; i++) {
-                enemyTurn();
-                userTurn(skillChoice[i]);
-                turnCount = loadedTurnCount - i;
-                gameUI.turnLabel.setText(turnCount + "턴 남았습니다!");
+                engine.processEnemyTurn();
+                engine.processUserTurn(skillChoice[i]);
+                turnCount = i + 1;
+                gameUI.turnLabel.setText(turnCount + "ターン経過しました！");
                 playerHp = player.hp;
                 enemyHp = enemy.hp;
             }
-            checkVictory();
+            engine.checkVictory();
         }
 
     }

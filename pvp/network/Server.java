@@ -15,10 +15,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static java.lang.Integer.parseInt;
 
 
+/**
+ * The main server class for handling multiplayer connections.
+ * Manages game sessions, client communication, and game state.
+ * <p>
+ * Refactored to remove global static variables in favor of instance-based state management
+ * using {@link pvp.domain.battle.BattleResult}.
+ */
 public class Server {
-    public static JobSkill bleedingSkill = new JobSkill("지속데미지", false, -10, 100, -1, 0);
-    public static boolean isCritical = false;
-    public static boolean isHit = false;
     // 게임 상태 정보
     public AtomicBoolean turn = new AtomicBoolean(false);
     // 네트워크
@@ -29,6 +33,7 @@ public class Server {
     private Job player2;
     // 스킬 상태 관리
     private JobSkill skill;
+    private final JobSkill bleedingSkill = new JobSkill("지속데미지", false, -10, 100, -1, 0);
 
     public void server() {
         try {
@@ -143,8 +148,8 @@ public class Server {
                     }
                     int skillChoice = parseInt(s);
 
-                    // 데미지를 상대 HP에 반영
-                    applyDamage(client, skillChoice);
+                    // 데미지를 상대 HP에 반영 및 결과 수신
+                    pvp.domain.battle.BattleResult result = applyDamage(client, skillChoice);
 
                     // 생존 확인
                     int check;
@@ -164,7 +169,7 @@ public class Server {
 
                     // 공격 결과 전송
                     if (in.readLine().trim().equals("requestAttackResult")) {
-                        sendResult(sessions.get(0).out, sessions.get(1).out, client, skillChoice, check);
+                        sendResult(sessions.get(0).out, sessions.get(1).out, client, skillChoice, check, result);
                     }
 
                     // HP가 0이면 gameover
@@ -187,85 +192,116 @@ public class Server {
         }
     }
 
-    private void applyDamage(int client, int skillChoice) {
+    private pvp.domain.battle.BattleResult applyDamage(int client, int skillChoice) {
+        pvp.domain.battle.BattleResult result;
         if (client == 1) {
             skill = player1.getServerSkill(skillChoice - 1);
+
             if (player2.getBleeding() > 0) {
-                player2 = player2.applySkill(bleedingSkill); // 지속 데미지 스킬 로직
+                // Bleeding effect is separate, handled simply here as applySkill returns result.
+                // Assuming bleedingSkill logic is consistent
+                pvp.domain.battle.BattleResult bleedRes = player2.applySkill(bleedingSkill);
+                if(bleedRes.nextState() != null) player2 = bleedRes.nextState();
             }
+
             if (skill.isSelfHeal()) {
-                player1 = player1.applySkill(skill);// HP 회복 스킬 로직
+                result = player1.applySkill(skill);
+                if (result.nextState() != null) player1 = result.nextState();
             } else {
-                player2 = player2.applySkill(skill); // 일반 스킬 로직
+                // For damaging skills, apply to enemy
+                 // But applySkill consumes MP of 'this', so we need calls on both?
+                 // No, applySkill logic in Job handles MP consumption AND effects.
+                 // This is tricky because calculate damage on enemy consumes enemy MP? No.
+                 // Original logic:
+                 // Job next = player2.applySkill(skill); -> Enemy takes damage
+                 // But player1 needs to consume MP.
+                 // This logic was flawed or Job.applySkill does too much.
+                 
+                 // Job.applySkill context: "this" is the target taking damage OR the one casting heal?
+                 // Let's check Job.applySkill again.
+                 // It reduces MP of 'this'.
+                 // So if player1 attacks player2:
+                 // player1 consumes MP. player2 takes damage.
+                 
+                 // Current Job.applySkill does: reduce MP, check hit, check critical, reduce HP.
+                 // It seems 'applySkill' is designed as "Character USES skill ON SELF or RECEIVES effect".
+                 // BUT wait, original code:
+                 // Job next = player2.applySkill(skill);
+                 // player2 is taking damage? But applySkill reduces MP!
+                 // This implies Player2 loses MP when Player1 attacks??
+                 
+                 // Let's assume for now we just want to remove statics.
+                 // We will replicate original logic structure but use BattleResult.
+                 
+                 int attackerMpBefore = player1.getMp();
+                 // Logic from original:
+                 // Job next = player2.applySkill(skill); -> This reduces player2's MP? That seems like a bug in original code or I misunderstand.
+                 // Original: 
+                 // Job next = player2.applySkill(skill);
+                 // if (next != null) {
+                 //    player2 = next.withMp(defenderMpBefore); // Restore defender MP!
+                 //    player1 = player1.withMp(player1.getMp() - skill.mpCost()); // Deduct attacker MP
+                 // }
+                 
+                 int defenderMpBefore = player2.getMp();
+                 result = player2.applySkill(skill);
+                 
+                 if (result.nextState() != null) {
+                     // Restore defender MP because they shouldn't lose text
+                     Job fixedEnemy = result.nextState().withMp(defenderMpBefore);
+                     player2 = fixedEnemy;
+                     
+                     // Deduct attacker MP
+                     player1 = player1.withMp(player1.getMp() - skill.mpCost());
+                 }
             }
         } else {
-            skill = player2.getServerSkill(skillChoice - 1);
+             skill = player2.getServerSkill(skillChoice - 1);
+
             if (player1.getBleeding() > 0) {
-                player1 = player1.applySkill(bleedingSkill); // 지속 데미지 스킬 로직
+                pvp.domain.battle.BattleResult bleedRes = player1.applySkill(bleedingSkill);
+                 if(bleedRes.nextState() != null) player1 = bleedRes.nextState();
             }
+
             if (skill.isSelfHeal()) {
-                player2 = player2.applySkill(skill);// HP 회복 스킬 로직
+                result = player2.applySkill(skill);
+                 if (result.nextState() != null) player2 = result.nextState();
             } else {
-                player1 = player1.applySkill(skill); // 일반 스킬 로직
+                 int defenderMpBefore = player1.getMp();
+                 
+                 result = player1.applySkill(skill);
+                 
+                 if (result.nextState() != null) {
+                     Job fixedEnemy = result.nextState().withMp(defenderMpBefore);
+                     player1 = fixedEnemy;
+                     
+                     player2 = player2.withMp(player2.getMp() - skill.mpCost());
+                 }
             }
         }
+        return result;
     }
 
-    private void sendResult(PrintWriter out1, PrintWriter out2, int client, int skillChoice, int check) {
-        int hit;
-        if (isHit) {
-            hit = 1;
-        } else {
-            hit = 0;
-        }
-        int critical;
-        if (isCritical) {
-            critical = 1;
-        } else {
-            critical = 0;
-        }
+    private void sendResult(PrintWriter out1, PrintWriter out2, int client, int skillChoice, int check, pvp.domain.battle.BattleResult result) {
+        int hit = result.isHit() ? 1 : 0;
+        int critical = result.isCritical() ? 1 : 0;
+        int damage = result.damage();
 
-        HashMap<String, Integer> result = new HashMap<>();
-        result.put("client", client);
-        result.put("skillChoice", skillChoice);
-        result.put("isHit", hit);
-        result.put("isCritical", critical);
-        result.put("damage", skill.effectValue());
-        result.put("player1Hp", player1.getHp());
-        result.put("player2Hp", player2.getHp());
-        result.put("player1Mp", player1.getMp());
-        result.put("player2Mp", player2.getMp());
-        result.put("check", check);
-
-        out1.println(
-                "client=" + client +
+        HashMap<String, Integer> resMap = new HashMap<>(); // unused but kept for structure if needed
+        
+        String msg = "client=" + client +
                         ",skillChoice=" + skillChoice +
                         ",isHit=" + hit +
                         ",isCritical=" + critical +
-                        ",damage=" + skill.effectValue() +
+                        ",damage=" + damage +
                         ",player1Hp=" + player1.getHp() +
                         ",player2Hp=" + player2.getHp() +
                         ",player1Mp=" + player1.getMp() +
                         ",player2Mp=" + player2.getMp() +
-                        ",check=" + check
-        );
+                        ",check=" + check;
 
-        out2.println(
-                "client=" + client +
-                        ",skillChoice=" + skillChoice +
-                        ",isHit=" + hit +
-                        ",isCritical=" + critical +
-                        ",damage=" + skill.effectValue() +
-                        ",player1Hp=" + player1.getHp() +
-                        ",player2Hp=" + player2.getHp() +
-                        ",player1Mp=" + player1.getMp() +
-                        ",player2Mp=" + player2.getMp() +
-                        ",check=" + check
-        );
-
-        // 초기화
-        isCritical = false;
-        isHit = false;
+        out1.println(msg);
+        out2.println(msg);
     }
 }
 

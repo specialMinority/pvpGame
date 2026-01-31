@@ -154,9 +154,9 @@ public class Client {
 
                         // HP, MP 세팅
                         player = player.withHp(myHp);
-                        enemy = enemy.withHp(enemyHp);
-                        player.setMp(myMp);
-                        enemy.setMp(enemyMp);
+                        enemy  = enemy.withHp(enemyHp);
+                        player = player.withMp(myMp);
+                        enemy  = enemy.withMp(enemyMp);
                         gameUI.playerHpBar.setMaximum(player.getHp());
                         gameUI.playerHpBar.setValue(player.getHp());
                         gameUI.playerMpBar.setMaximum(player.getMp());
@@ -321,14 +321,14 @@ public class Client {
         // HP 반영, MP 반영
         if (whatClient) {
             player = player.withHp(hp1);
-            enemy = enemy.withHp(hp2);
-            player.setMp(mp1);
-            enemy.setMp(mp2);
+            enemy  = enemy.withHp(hp2);
+            player = player.withMp(mp1);
+            enemy  = enemy.withMp(mp2);
         } else {
             player = player.withHp(hp2);
-            enemy = enemy.withHp(hp1);
-            player.setMp(mp2);
-            enemy.setMp(mp1);
+            enemy  = enemy.withHp(hp1);
+            player = player.withMp(mp2);
+            enemy  = enemy.withMp(mp1);
         }
 
         // 전투 상황 메세지 출력

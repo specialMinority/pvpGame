@@ -1,11 +1,7 @@
 package pvp.domain.character;
 
 import pvp.domain.skill.JobSkill;
-
 import java.util.Random;
-
-import static pvp.network.Server.isCritical;
-import static pvp.network.Server.isHit;
 
 public class Job {
     private final String name;
@@ -26,33 +22,37 @@ public class Job {
         return new Job(name, serverSkills, hp, mp, bleeding);
     }
 
-    public Job applySkill(JobSkill skill) {
+    public Job withMp(int newMp) {
+        return new Job(name, serverSkills, hp, newMp, bleeding);
+    }
+
+    public Job withBleeding(int newBleeding) {
+        return new Job(name, serverSkills, hp, mp, newBleeding);
+    }
+
+    public pvp.domain.battle.BattleResult applySkill(JobSkill skill) {
         if (this.mp < skill.mpCost()) {
-            isHit = false;
-            isCritical = false;
-            return null;
+            return new pvp.domain.battle.BattleResult(this, false, false, 0);
         }
 
-        this.mp -= skill.mpCost();
+        Job afterMp = this.withMp(this.mp - skill.mpCost());
 
         if (!skill.hit()) {
-            isHit = false;
-            return null;
+            return new pvp.domain.battle.BattleResult(afterMp, false, false, 0);
         }
+
         if (criticalDmg()) {
-            int newHp = this.hp + (int) (skill.effectValue() * 1.3);
-            Job newJob = this.withHp(newHp);
-            bleeding += skill.bleeding();
-            isHit = true;
-            isCritical = true;
-            return newJob;
+            int damage = (int) (skill.effectValue() * 1.3);
+            int newHp = this.hp + damage;
+            Job newJob = afterMp.withHp(newHp);
+            Job afterBleeding = newJob.withBleeding(newJob.bleeding + skill.bleeding());
+            return new pvp.domain.battle.BattleResult(afterBleeding, true, true, damage);
         } else {
-            int newHp = this.hp + skill.effectValue();
-            Job newJob = this.withHp(newHp);
-            bleeding += skill.bleeding();
-            isHit = true;
-            isCritical = false;
-            return newJob;
+            int damage = skill.effectValue();
+            int newHp = this.hp + damage;
+            Job newJob = afterMp.withHp(newHp);
+            Job afterBleeding = newJob.withBleeding(newJob.bleeding + skill.bleeding());
+            return new pvp.domain.battle.BattleResult(afterBleeding, true, false, damage);
         }
     }
 
@@ -66,10 +66,6 @@ public class Job {
 
     public int getMp() {
         return mp;
-    }
-
-    public void setMp(int mp) {
-        this.mp = mp;
     }
 
     public int getBleeding() {

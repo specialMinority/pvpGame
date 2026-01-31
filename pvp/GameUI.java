@@ -14,7 +14,7 @@ public class GameUI {
     JPanel gamePanel = new JPanel();  // 게임 화면
     public JTextArea logArea = new JTextArea();
     JTextField inputText = new JTextField();
-    public JButton submitButton = new JButton("선택");
+    public JButton submitButton = new JButton("選択");
 
     // HP/MP 바
     public JProgressBar playerHpBar = new JProgressBar();
@@ -22,13 +22,13 @@ public class GameUI {
     public JProgressBar playerMpBar = new JProgressBar(); // 추가
     public JProgressBar enemyMpBar = new JProgressBar();  // 추가
 
-    JLabel turnLabel = new JLabel("남은 턴이 표시됩니다!", SwingConstants.CENTER);
-    JButton saveButton = new JButton("저장");
-    public JButton retryButton = new JButton("재도전");
-    public JButton exitButton = new JButton("끝내기");
-    JButton startButton = new JButton("게임시작");
-    JButton loadButton = new JButton("불러오기");
-    JButton multiButton = new JButton("온라인 대전");
+    JLabel turnLabel = new JLabel("残りのターンが表示されます！", SwingConstants.CENTER);
+    JButton saveButton = new JButton("保存");
+    public JButton retryButton = new JButton("再挑戦");
+    public JButton exitButton = new JButton("終了");
+    JButton startButton = new JButton("ゲーム開始");
+    JButton loadButton = new JButton("ロード");
+    JButton multiButton = new JButton("オンライン対戦");
 
     public GameUI() {
         //창 세팅
@@ -84,12 +84,12 @@ public class GameUI {
         JPanel turnPanel = new JPanel();
         turnPanel.setLayout(new BoxLayout(turnPanel, BoxLayout.Y_AXIS));
 
-        turnLabel.setFont(new Font("맑은 고딕", Font.BOLD, 18));
+        turnLabel.setFont(new Font("Meiryo", Font.BOLD, 18));
         turnLabel.setOpaque(true);
         turnLabel.setForeground(Color.BLACK);
 
-        JLabel alertLabel = new JLabel("저장은 1턴 이상 진행 후에 가능합니다");
-        alertLabel.setFont(new Font("맑은 고딕", Font.BOLD, 10));
+        JLabel alertLabel = new JLabel("保存は1ターン以上進行後に可能です");
+        alertLabel.setFont(new Font("Meiryo", Font.BOLD, 10));
         alertLabel.setOpaque(true);
         alertLabel.setForeground(Color.RED);
 
@@ -98,6 +98,21 @@ public class GameUI {
 
         turnPanel.add(turnLabel);
         turnPanel.add(alertLabel);
+
+        // Font setup
+        Font jpFont = new Font("Meiryo", Font.PLAIN, 12);
+        Font jpBoldFont = new Font("Meiryo", Font.BOLD, 12);
+        Font activeFont = new Font("Meiryo", Font.BOLD, 14);
+
+        logArea.setFont(jpFont);
+        inputText.setFont(jpFont);
+        submitButton.setFont(jpBoldFont);
+        startButton.setFont(activeFont);
+        loadButton.setFont(activeFont);
+        multiButton.setFont(activeFont);
+        saveButton.setFont(jpBoldFont);
+        retryButton.setFont(jpBoldFont);
+        exitButton.setFont(jpBoldFont);
 
         // ── HP/MP 바 공통 설정
         configureBar(playerHpBar, Color.BLUE);
@@ -109,8 +124,10 @@ public class GameUI {
         JPanel leftStack = new JPanel();
         leftStack.setLayout(new BoxLayout(leftStack, BoxLayout.Y_AXIS));
         leftStack.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 8));
-        JLabel leftHpLabel = new JLabel("내 HP");
-        JLabel leftMpLabel = new JLabel("내 MP");
+        JLabel leftHpLabel = new JLabel("自分 HP");
+        JLabel leftMpLabel = new JLabel("自分 MP");
+        leftHpLabel.setFont(jpBoldFont); // Font 적용
+        leftMpLabel.setFont(jpBoldFont); // Font 적용
         leftStack.add(leftHpLabel);
         leftStack.add(playerHpBar);
         leftStack.add(Box.createRigidArea(new Dimension(0, 4)));
@@ -121,8 +138,10 @@ public class GameUI {
         JPanel rightStack = new JPanel();
         rightStack.setLayout(new BoxLayout(rightStack, BoxLayout.Y_AXIS));
         rightStack.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 4));
-        JLabel rightHpLabel = new JLabel("적 HP");
-        JLabel rightMpLabel = new JLabel("적 MP");
+        JLabel rightHpLabel = new JLabel("敵 HP");
+        JLabel rightMpLabel = new JLabel("敵 MP");
+        rightHpLabel.setFont(jpBoldFont); // Font 적용
+        rightMpLabel.setFont(jpBoldFont); // Font 적용
         rightStack.add(rightHpLabel);
         rightStack.add(enemyHpBar);
         rightStack.add(Box.createRigidArea(new Dimension(0, 4)));
@@ -183,6 +202,7 @@ public class GameUI {
         bar.setStringPainted(true);
         bar.setForeground(fg);
         bar.setPreferredSize(new Dimension(220, 18));
+        bar.setFont(new Font("Meiryo", Font.BOLD, 12)); // Font 적용
     }
 
     public void append(String text) {
