@@ -66,7 +66,7 @@
 
 ---
 
-## � プロジェクト構成 (Structure)
+## ✅ プロジェクト構成 (Structure)
 
 ```
 pvpGame/
